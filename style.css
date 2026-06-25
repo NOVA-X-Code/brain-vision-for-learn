@@ -1,0 +1,31 @@
+:root {
+  --bg-primary: #0f172a; --bg-secondary: #1e293b;
+  --accent: #6366f1; --accent-hover: #4f46e5;
+  --text-main: #f8fafc; --text-muted: #94a3b8; --success: #10b981;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+body { background-color: var(--bg-primary); color: var(--text-main); min-height: 100vh; }
+header { background-color: var(--bg-secondary); padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+header h1 { font-size: 1.5rem; color: var(--accent); font-weight: 800; }
+main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+.grid-dashboard { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
+.card { background-color: var(--bg-secondary); border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; margin-bottom: 1.5rem; }
+input, select, textarea { width: 100%; padding: 0.75rem; margin-bottom: 1rem; border-radius: 6px; border: 1px solid #334155; background-color: var(--bg-primary); color: white; }
+button { background-color: var(--accent); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; }
+button:hover { background-color: var(--accent-hover); }
+.list-item { padding: 1rem; background: var(--bg-primary); border-radius: 8px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
+.progress-bar-container { background: #334155; border-radius: 20px; height: 10px; width: 100%; margin-top: 5px; overflow: hidden; }
+.progress-bar { background: var(--success); height: 100%; width: 0%; }
+.badge { background: rgba(16, 185, 129, 0.2); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.85rem; }
+.btn-download { background: transparent; color: var(--success); border: 1px solid var(--success); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; margin-top: 5px; width: auto;}
+
+@media print {
+  body *, header, main, .card, select, button, .badge { display: none !important; }
+  #printable-certificate-target, #printable-certificate-target * { display: block !important; }
+  @page { size: A4 landscape; margin: 0; }
+  #printable-certificate-target { position: absolute; top:0; left:0; width:297mm; height:210mm; background:white; color:black; display:flex !important; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:3rem; box-sizing:border-box; }
+  .cert-border { border: 6px double #6366f1; padding: 3rem; width:100%; height:100%; display:flex !important; flex-direction:column; justify-content:center; align-items:center; }
+  .cert-title { font-size: 3rem; color: #6366f1; margin-bottom: 2rem; text-transform: uppercase; }
+  .cert-name { font-size: 2.2rem; font-weight: bold; border-bottom: 2px solid #6366f1; margin: 1.5rem 0; padding-bottom: 0.5rem; }
+}
+#printable-certificate-target { display: none; }
