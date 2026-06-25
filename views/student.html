@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"><title>Brain Vision - Étudiant</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  
+  <!-- ZONE TECHNIQUE MASQUÉE À L'ÉCRAN / APPARAÎT UNIQUEMENT DANS LE PDF IMPRIMÉ -->
+  <div id="printable-certificate-target">
+    <div class="cert-border">
+      <div class="cert-title">Certificat de Réussite</div>
+      <div class="cert-text">Le programme d'apprentissage en ligne certifie que l'étudiant(e)</div>
+      <!-- Cette zone recevra le VRAI NOM de l'étudiant -->
+      <div class="cert-name" id="pdfStudentNom">Nom de l'étudiant</div>
+      <div class="cert-text">a rempli toutes les conditions requises et validé avec succès le module :</div>
+      <div class="cert-name" id="pdfModuleNom" style="font-size: 1.8rem !important;">Nom du Module</div>
+      <div class="cert-text">Délivré de manière infalsifiable par l'écosystème numérique de Brain Vision.</div>
+      <div class="cert-footer">
+        <div>Fait en ligne le : <span id="pdfDate">--/--/----</span></div>
+        <div style="text-align: right; font-weight: bold; color: #6366f1;">BRAIN VISION LMS</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERFACE UTILISATEUR STANDARD -->
+  <header>
+    <h1>BRAIN VISION // Apprentissage</h1>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span id="welcomeMessage" style="color: var(--text-muted); font-weight: 600;">Bienvenue</span>
+      <button onclick="logout()" style="width:auto; padding: 0.5rem 1rem;">Déconnexion</button>
+    </div>
+  </header>
+  
+  <main class="grid-dashboard">
+    <div>
+      <div class="card">
+        <h2>Vos Certificats Obtenus</h2>
+        <div id="certificatsList"><p style="color:var(--text-muted);">Aucun certificat pour le moment.</p></div>
+      </div>
+      <div class="card">
+        <h2>Sélectionner un Cours</h2>
+        <select id="selectCours" onchange="loadLecons(this.value)"><option value="">-- Choisir un cours --</option></select>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Contenu de la Leçon & Évaluation</h2>
+      <div id="leconZone"><p style="color:var(--text-muted);">Sélectionnez un cours pour commencer à apprendre.</p></div>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let currentCoursId = null;
+    let currentUserNom = "Étudiant Brain Vision"; // Valeur par défaut de sécurité
+
+    async function init() {
+      // Récupérer le vrai nom de l'étudiant connecté
+      try {
+        const user = await apiRequest('/api/auth/me');
+        if (user && user.nom) {
+          currentUserNom = user.nom;
+          document.getElementById('welcomeMessage').innerText = `👤 ${user.nom}`;
+        }
+      } catch(e) { 
+        console.log("Mode simulation ou utilisateur non récupéré");
+      }
+
+      const [cours, certifs] = await Promise.all([apiRequest('/api/cours'), apiRequest('/api/etudiant/certificats')]);
+      document.getElementById('selectCours').innerHTML = '<option value="">-- Choisir un cours --</option>' + cours.map(c => `<option value="${c.id}">${c.titre}</option>`).join('');
+      
+      if(certifs.length > 0) {
+        document.getElementById('certificatsList').innerHTML = certifs.map(cr => `
+          <div class="list-item" style="border:1px solid var(--success); flex-direction: column; align-items: flex-start; gap: 0.5rem;">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+              <strong>🎓 ${cr.module_nom}</strong> 
+              <span class="badge">Validé</span>
+            </div>
+            <button class="btn-download" onclick="telechargerCertificat('${cr.module_nom}')">📥 Télécharger le certificat (PDF)</button>
+          </div>
+        `).join('');
+      } else {
+        document.getElementById('certificatsList').innerHTML = '<p style="color:var(--text-muted);">Aucun certificat pour le moment.</p>';
+      }
+    }
+
+    // Déclenchement du Téléchargement PDF avec insertion du NOM
+    function telechargerCertificat(moduleNom) {
+      document.getElementById('pdfStudentNom').innerText = currentUserNom; // Injection du Nom complet
+      document.getElementById('pdfModuleNom').innerText = moduleNom;
+      document.getElementById('pdfDate').innerText = new Date().toLocaleDateString('fr-FR');
+      window.print();
+    }
+
+    async function loadLecons(coursId) {
+      if(!coursId) return;
+      currentCoursId = coursId;
+      const lecons = await apiRequest(`/api/etudiant/cours/${coursId}/leçons`);
+      const zone = document.getElementById('leconZone');
+      if(lecons.length === 0) { zone.innerHTML = '<p>Aucune leçon disponible dans ce cours.</p>'; return; }
+      
+      let html = '';
+      lecons.forEach((l, index) => {
+        html += `<div class="card" style="background:var(--bg-primary);">
+          <h3>Leçon ${index+1} : ${l.titre}</h3>
+          <p style="margin:0.5rem 0;"><a href="${l.fichier_url}" target="_blank" style="color:var(--accent);">👉 Ouvrir le cours (PDF / Vidéo)</a></p>
+          <div class="progress-bar-container"><div class="progress-bar" style="width:${l.note || 0}%"></div></div>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">Note à l'évaluation : ${l.note !== null ? l.note + '%' : 'Non tentée'}</p>
+          
+          ${l.note === 100 ? '<p style="color:var(--success)">✅ Évaluation Validée !</p>' : `
+            <form onsubmit="validerEval(event, ${l.evaluation_id}, ${l.id})">
+              <p><strong>Question :</strong> ${l.question}</p>
+              <label><input type="radio" name="q_${l.id}" value="A" required> ${l.option_a}</label><br>
+              <label><input type="radio" name="q_${l.id}" value="B"> ${l.option_b}</label><br>
+              <label><input type="radio" name="q_${l.id}" value="C"> ${l.option_c}</label><br>
+              <button type="submit" style="margin-top:0.5rem; padding:0.5rem;">Soumettre la réponse</button>
+            </form>
+          `}
+        </div>`;
+      });
+      zone.innerHTML = html;
+    }
+
+    async function validerEval(e, evalId, leconId) {
+      e.preventDefault();
+      const radio = document.querySelector(`input[name="q_${leconId}"]:checked`);
+      if(!radio) return;
+      const res = await apiRequest(`/api/etudiant/evaluations/${evalId}/soumettre`, 'POST', { reponse: radio.value, lecon_id: leconId, cours_id: currentCoursId });
+      alert(res.note === 100 ? "🎉 Bonne réponse ! Progression mise à jour." : "❌ Mauvaise réponse, réessayez !");
+      loadLecons(currentCoursId);
+      init(); 
+    }
+
+    init();
+  </script>
+</body>
+</html>

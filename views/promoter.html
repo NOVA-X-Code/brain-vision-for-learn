@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"><title>Espace Promoteur</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header><h1>BRAIN VISION // Table de Contrôle</h1><button onclick="logout()" style="width:auto;">Déconnexion</button></header>
+  <main class="grid-dashboard">
+    <div>
+      <div class="card">
+        <h2>Approuver les Enseignants</h2>
+        <div id="pendingTeachers"></div>
+      </div>
+      <div class="card">
+        <h2>Créer un autre Promoteur</h2>
+        <form id="pForm">
+          <input type="text" id="pNom" placeholder="Nom" required>
+          <input type="email" id="pEmail" placeholder="Email" required>
+          <input type="password" id="pPass" placeholder="Mot de passe" required>
+          <button type="submit">Créer le compte Promoteur</button>
+        </form>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>Déterminer un Module de cours</h2>
+        <form id="mForm">
+          <input type="text" id="mNom" placeholder="Nom du Module" required>
+          <textarea id="mDesc" placeholder="Description..."></textarea>
+          <button type="submit">Ajouter</button>
+        </form>
+      </div>
+      <div class="card"><h2>Modules Existants</h2><div id="mList"></div></div>
+    </div>
+  </main>
+  <script src="/js/app.js"></script>
+  <script>
+    async function load() {
+      const p = await apiRequest('/api/promoter/teachers/pending');
+      document.getElementById('pendingTeachers').innerHTML = p.map(t => `<div class="list-item"><span>${t.nom} (${t.email})</span><button onclick="approve(${t.id})" style="width:auto; padding:0.25rem 0.5rem; background:var(--success);">Approuver</button></div>`).join('') || '<p>Aucun en attente.</p>';
+      const m = await apiRequest('/api/modules');
+      document.getElementById('mList').innerHTML = m.map(x => `<div class="list-item"><strong>${x.nom}</strong></div>`).join('');
+    }
+    async function approve(id) { await apiRequest(`/api/promoter/teachers/${id}/approve`, 'POST'); load(); }
+    document.getElementById('pForm').addEventListener('submit', async(e)=>{
+      e.preventDefault();
+      await apiRequest('/api/promoter/create-admin', 'POST', {nom: document.getElementById('pNom').value, email: document.getElementById('pEmail').value, password: document.getElementById('pPass').value});
+      alert('Nouveau promoteur créé !'); document.getElementById('pForm').reset();
+    });
+    document.getElementById('mForm').addEventListener('submit', async(e)=>{
+      e.preventDefault();
+      await apiRequest('/api/modules', 'POST', {nom: document.getElementById('mNom').value, description: document.getElementById('mDesc').value});
+      document.getElementById('mForm').reset(); load();
+    });
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"><title>Brain Vision - Inscription</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="display:flex; justify-content: center; align-items: center; min-height: 100vh;">
+  <div class="card" style="width: 100%; max-width: 400px;">
+    <h1 style="text-align: center; margin-bottom: 1.5rem; color: var(--accent);">INSCRIPTION</h1>
+    <form id="registerForm">
+      <input type="text" id="nom" required placeholder="Nom complet (Sera écrit sur le certificat)">
+      <input type="email" id="email" required placeholder="Adresse Email">
+      <input type="password" id="password" required placeholder="Mot de passe">
+      <select id="role">
+        <option value="etudiant">Étudiant (Accès immédiat)</option>
+        <option value="enseignant">Enseignant (Nécessite approbation)</option>
+      </select>
+      <button type="submit">Créer mon compte</button>
+    </form>
+    <p style="margin-top:1rem; text-align:center;"><a href="/" style="color:var(--text-muted);">Retour à la connexion</a></p>
+  </div>
+  <script src="/js/app.js"></script>
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const res = await apiRequest('/api/auth/register', 'POST', {
+          nom: document.getElementById('nom').value,
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value,
+          role: document.getElementById('role').value
+        });
+        alert(res.message);
+        window.location.href = '/';
+      } catch(err) { alert(err.message); }
+    });
+  </script>
+</body>
+</html>
